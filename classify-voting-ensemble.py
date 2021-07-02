@@ -1,46 +1,73 @@
 import numpy as np
-from sklearn.linear_model import LogisticRegression
-from sklearn.naive_bayes import GaussianNB
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+from sklearn.model_selection import cross_val_score, KFold
+from sklearn.ensemble import VotingClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC, LinearSVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.gaussian_process import GaussianProcessClassifier
+from matplotlib import pyplot
 
-clf1 = LogisticRegression(multi_class='multinomial', random_state=1)
-clf2 = RandomForestClassifier(n_estimators=50)
-clf3 = GaussianNB()
-clf4 = DecisionTreeClassifier()
-clf5 = LinearSVC()
-clf6 = KNeighborsClassifier(n_neighbors=5)
+# get the dataset
+def get_dataset():
+    training_dataset = np.loadtxt(r'training_data.csv', delimiter=',')
+    # obtain the attributes
+    X = training_dataset[:, 0:-1]
+    # obtain the classes
+    y = training_dataset[:, -1]
+    return X, y
 
-#dataset = np.loadtxt(r'training_data.csv', delimiter=',')
+# get a voting ensemble of models
+def get_voting():
+    # define the base models
+    models = list()
+    models.append(('random-forest', RandomForestClassifier(n_estimators=50)))
+    models.append(('k-nearest-neighbours', KNeighborsClassifier()))
+    models.append(('decision-tree', DecisionTreeClassifier()))
+    #models.append(('linear-svc', LinearSVC()))
+    #models.append(('logistic-regression', LogisticRegression()))
+    models.append(('gaussian-naive-bayes', GaussianNB()))
+    models.append(('gaussian-process', GaussianProcessClassifier()))
+    # define the voting ensemble
+    ensemble = VotingClassifier(estimators=models, voting='hard')
+    #ensemble = VotingClassifier(estimators=models, voting='soft')
+    return ensemble
 
-#X = dataset[:,0:-1] #get the attributes
-#y = dataset[:,-1] #get the classes
+# get a list of models to evaluate
+def get_models():
+    models = dict()
+    models['random-forest'] = RandomForestClassifier()
+    models['k-nearest-neighbours'] = KNeighborsClassifier()
+    models['decision-tree'] = DecisionTreeClassifier()
+    #models['linear-svc'] = LinearSVC()
+    #models['logistic-regression'] = LogisticRegression()
+    models['gaussian-naive-bayes'] = GaussianNB()
+    models['gaussian-process'] = GaussianProcessClassifier()
+    models['hard_voting'] = get_voting()
+    #models['soft_voting'] = get_voting()
+    return models
 
 
-# X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
-# y = np.array([1, 1, 1, 2, 2, 2])
-eclf1 = VotingClassifier(estimators=[
-        ('lr', clf1), ('rf', clf2), ('gnb', clf3), ('dt', clf4), ('svc', clf5), ('kn', clf6)],
-        voting='hard')
-eclf1 = eclf1.fit(X, y)
-print(eclf1.predict(X))
+# evaluate a give model using cross-validation
+def evaluate_model(model, X, y):
+    cv = KFold(n_splits=10)
+    scores = cross_val_score(model, X, y, scoring='accuracy', cv=cv, n_jobs=-1, error_score='raise')
+    return scores
 
-#np.array_equal(eclf1.named_estimators_.lr.predict(X),
-#               eclf1.named_estimators_['lr'].predict(X))
-
-# eclf2 = VotingClassifier(estimators=[
-#        ('lr', clf1), ('rf', clf2), ('gnb', clf3)],
-#        voting='soft')
-# eclf2 = eclf2.fit(X, y)
-# print(eclf2.predict(X))
-
-# eclf3 = VotingClassifier(estimators=[
-#       ('lr', clf1), ('rf', clf2), ('gnb', clf3)],
-#      voting='soft', weights=[2,1,1],
-#       flatten_transform=True)
-# eclf3 = eclf3.fit(X, y)
-# print(eclf3.predict(X))
-
-# print(eclf3.transform(X).shape)
+# define dataset
+X, y = get_dataset()
+# get the models to evaluate
+models = get_models()
+# evaluate the models and store results
+results, names = list(), list()
+for name, model in models.items():
+    scores = evaluate_model(model, X, y)
+    results.append(scores)
+    names.append(name)
+    #print('>%s %.3f (%.3f)' % (name, np.mean(scores), np.std(scores)))
+    print(name, (np.mean(scores)*100), (np.std(scores)*100))
+# plot model performance for comparison
+#pyplot.boxplot(results, labels=names, showmeans=True)
+#pyplot.show()

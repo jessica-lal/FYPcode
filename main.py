@@ -23,15 +23,16 @@ def get_dataset():
 def get_voting():
     # define the base models
     models = list()
-    models.append(('random-forest', RandomForestClassifier()))
+    models.append(('random-forest', RandomForestClassifier(n_estimators=50)))
     models.append(('k-nearest-neighbours', KNeighborsClassifier()))
     models.append(('decision-tree', DecisionTreeClassifier()))
     #models.append(('linear-svc', LinearSVC()))
-    models.append(('logistic-regression', LogisticRegression()))
+    #models.append(('logistic-regression', LogisticRegression()))
     models.append(('gaussian-naive-bayes', GaussianNB()))
     models.append(('gaussian-process', GaussianProcessClassifier()))
     # define the voting ensemble
     ensemble = VotingClassifier(estimators=models, voting='hard')
+    #ensemble = VotingClassifier(estimators=models, voting='soft')
     return ensemble
 
 # get a list of models to evaluate
@@ -41,10 +42,11 @@ def get_models():
     models['k-nearest-neighbours'] = KNeighborsClassifier()
     models['decision-tree'] = DecisionTreeClassifier()
     #models['linear-svc'] = LinearSVC()
-    models['logistic-regression'] = LogisticRegression()
+    #models['logistic-regression'] = LogisticRegression()
     models['gaussian-naive-bayes'] = GaussianNB()
     models['gaussian-process'] = GaussianProcessClassifier()
     models['hard_voting'] = get_voting()
+    #models['soft_voting'] = get_voting()
     return models
 
 
@@ -53,7 +55,6 @@ def evaluate_model(model, X, y):
     cv = KFold(n_splits=10)
     scores = cross_val_score(model, X, y, scoring='accuracy', cv=cv, n_jobs=-1, error_score='raise')
     return scores
-
 
 # define dataset
 X, y = get_dataset()
@@ -65,7 +66,8 @@ for name, model in models.items():
     scores = evaluate_model(model, X, y)
     results.append(scores)
     names.append(name)
-    print('>%s %.3f (%.3f)' % (name, np.mean(scores), np.std(scores)))
+    #print('>%s %.3f (%.3f)' % (name, np.mean(scores), np.std(scores)))
+    print(name, (np.mean(scores)*100), (np.std(scores)*100))
 # plot model performance for comparison
-pyplot.boxplot(results, labels=names, showmeans=True)
-pyplot.show()
+#pyplot.boxplot(results, labels=names, showmeans=True)
+#pyplot.show()
