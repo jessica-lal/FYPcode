@@ -64,4 +64,4 @@ for train_index, test_index in k_fold.split(X):
 accuracy = np.mean(score_collection)
 standard_deviation = np.std(score_collection)
 print("Finished training via validation:")
-print("Accuracy: " + str(accuracy * 100) + ", std: " + str(standard_deviation * 100))
+print("Accuracy: " + str(accuracy * 100) + ", Standard deviation: " + str(standard_deviation * 100))

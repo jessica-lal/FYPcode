@@ -68,6 +68,3 @@ for name, model in models.items():
     names.append(name)
     #print('>%s %.3f (%.3f)' % (name, np.mean(scores), np.std(scores)))
     print(name, (np.mean(scores)*100), (np.std(scores)*100))
-# plot model performance for comparison
-#pyplot.boxplot(results, labels=names, showmeans=True)
-#pyplot.show()
